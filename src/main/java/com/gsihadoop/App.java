@@ -76,6 +76,7 @@ public class App extends Configured implements Tool {
 		//Causes ArrayIndexOutOfBoundsException if not working right 
 		try{
 			this.sp500ListPath = otherArgs[4];
+			conf.set("sp500Path",sp500ListPath);
 		}catch(ArrayIndexOutOfBoundsException aiobe){
 			
 		}
