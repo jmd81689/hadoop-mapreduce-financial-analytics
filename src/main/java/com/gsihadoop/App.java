@@ -7,12 +7,11 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.lib.MultipleOutputs;
-import org.apache.hadoop.mapred.lib.MultipleTextOutputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.*;
 
@@ -49,11 +48,11 @@ public class App extends Configured implements Tool {
 		System.exit(res);
 	}
 	
-    static class MultiFileOutput extends MultipleTextOutputFormat<Text, Text> {
+    /*static class MultiFileOutput extends MultipleTextOutputFormat<Text, Text> {
         protected String generateFileNameForKeyValue(Text key, Text value, String name) {
                 return key.toString() + "/" + name;
         }
-    }
+    }*/
 
 	@Override
 	public int run(String[] args) throws Exception {
@@ -76,6 +75,7 @@ public class App extends Configured implements Tool {
 		//Causes ArrayIndexOutOfBoundsException if not working right 
 		try{
 			this.sp500ListPath = otherArgs[4];
+			System.out.println("Arg[4]: " + otherArgs[4]); //Debug
 			conf.set("sp500Path",sp500ListPath);
 		}catch(ArrayIndexOutOfBoundsException aiobe){
 			
@@ -122,15 +122,29 @@ public class App extends Configured implements Tool {
 		// Setup input path and inputformat
 		FileInputFormat.addInputPath(job, new Path(inputPath));
 		job.setInputFormatClass(TextInputFormat.class);
-
+		FileOutputFormat.setOutputPath(job, new Path(outputPath));
+		job.setOutputFormatClass(TextOutputFormat.class);
+		
 		// Setup output path and outputformat
 		if (isSP500Job){
-			job.setOutputKeyClass(Text.class);
-			job.setOutputValueClass(Text.class);
-		} else {
-			FileOutputFormat.setOutputPath(job, new Path(outputPath));
-			job.setOutputFormatClass(TextOutputFormat.class);
-		}
+			//job.setOutputKeyClass(Text.class);
+			//job.setOutputValueClass(Text.class);
+			// Defines additional single text based output 'yearly' for the job
+			 
+			MultipleOutputs.addNamedOutput(job, "yearly", TextOutputFormat.class,
+			 Text.class, Double.class);
+
+			// Defines additional sequence-file based output 'monthly' for the job
+			MultipleOutputs.addNamedOutput(job, "monthly", TextOutputFormat.class,
+					 Text.class, Double.class);
+			// Defines additional sequence-file based output 'monthly' for the job
+			MultipleOutputs.addNamedOutput(job, "weekly", TextOutputFormat.class,
+								 Text.class, Double.class);
+						
+		} //else {
+			//FileOutputFormat.setOutputPath(job, new Path(outputPath));
+			//job.setOutputFormatClass(TextOutputFormat.class);
+		//}
 		
 
 		// Execute Job and return status

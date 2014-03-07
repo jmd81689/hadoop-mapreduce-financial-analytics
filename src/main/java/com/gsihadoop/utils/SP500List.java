@@ -41,7 +41,7 @@ public class SP500List {
 	}
 	
 	public static HashSet<String> getSP500HashSet(){
-		HashSet<String> mySet = new HashSet<>(Arrays.asList(list));
+		HashSet<String> mySet = new HashSet<String>(Arrays.asList(list));
 		hs = mySet;
 		return hs;
 	}

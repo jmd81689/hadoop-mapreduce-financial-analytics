@@ -12,9 +12,9 @@ import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 
 import com.gsihadoop.utils.DateUtilities;
 
-public class SP500Reducer extends Reducer<Text, Text, Text, DoubleWritable> {
+public class SP500Reducer extends Reducer<Text, DoubleWritable, Text, DoubleWritable> {
 	
-	private MultipleOutputs multipleOutputs;
+	private MultipleOutputs<Text, DoubleWritable> multipleOutputs;
 	
 	protected void setup(Context context) throws IOException, InterruptedException {
 		multipleOutputs  = new MultipleOutputs(context);
@@ -33,8 +33,57 @@ public class SP500Reducer extends Reducer<Text, Text, Text, DoubleWritable> {
 	 * @throws InterruptedException
 	 */
 	@Override
-	public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-		double aggregateYearClose = 0;
+	public void reduce(Text key, Iterable<DoubleWritable> values, Context context) throws IOException, InterruptedException {
+		AggregatorType aggType;
+		
+		String[] bigKey = key.toString().split(",");
+		String symbol = bigKey[0];
+		String year = bigKey[1];
+		aggType = AggregatorType.YEARLY;
+		try{
+			String month = bigKey[2];
+			aggType = AggregatorType.MONTHLY;
+			String weekOfYear = bigKey[3];
+			aggType = AggregatorType.WEEKLY;
+		} catch(NullPointerException npe){
+			
+		} catch(ArrayIndexOutOfBoundsException aob){
+			
+		}
+		
+		double numValues = 0.0;
+		double sumValues = 0.0;
+		
+		for(DoubleWritable dwValue : values){
+			double value = dwValue.get();
+			sumValues+=value;
+			numValues++;
+		}
+		
+		double result = sumValues/numValues;
+		
+		switch(aggType){
+			case YEARLY:
+				multipleOutputs.write("yearly", key, result, "yearly/part");
+				break;
+			case MONTHLY:
+				multipleOutputs.write("monthly", key, result, "monthly/part");
+				break;
+			case WEEKLY:
+				multipleOutputs.write("weekly", key, result, "weekly/part");
+				break;
+				
+		}
+		/*
+		 * mos.write("text", , key, new Text("Hello"));
+ mos.write("seq", LongWritable(1), new Text("Bye"), "seq_a");
+ mos.write("seq", LongWritable(2), key, new Text("Chau"), "seq_b");
+ mos.write(key, new Text("value"), generateFileName(key, new Text("value")));
+		 * 
+		 * 
+		 * 
+		 * 
+		 * double aggregateYearClose = 0;
 		double lowYear = Double.MAX_VALUE;
 		
 		String[] keyValue = (key.toString()).split(",");
@@ -66,7 +115,7 @@ public class SP500Reducer extends Reducer<Text, Text, Text, DoubleWritable> {
 			}
 		}
 		// Year
-		context.write(key, new DoubleWritable(aggregateYearClose));
+		context.write(key, new DoubleWritable(aggregateYearClose));*/
 	}
 
 	@Override
